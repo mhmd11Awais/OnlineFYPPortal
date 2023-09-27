@@ -1,0 +1,132 @@
+﻿@page "/stdgroup/addnewgroup"
+@page "/stdgroup/addnewgroup/{SgID}"
+@using ClassLibraryDAL
+@using ClassLibraryModel
+@using System.Security.Claims
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IJSRuntime JS
+@inject NavigationManager nm
+@attribute [Authorize(Roles = "Student")]
+
+<h3 class="text-center mb-4">Add New Group</h3>
+
+<div class="alert alert-success" role="alert" hidden="@showAlert">
+	@errorMessage
+</div>
+
+<EditForm Model="stdgroupModel" OnSubmit="SaveStdGroup">
+	<div class="mb-3">
+		<label for="groupName" class="form-label">Group Name</label>
+		<input type="text" class="form-control" id="groupName" @bind-value="stdgroupModel.SgName" placeholder="Enter Group Name" />
+	</div>
+
+	<div class="d-grid gap-2 d-md-flex justify-content-md-end">
+		<button type="submit" class="btn btn-outline-primary btn-sm">@ButtonName</button>
+	</div>
+</EditForm>
+
+<br />
+
+
+@code {
+
+	[Parameter]
+	public string? SgID { get; set; }
+
+	private bool? showAlert = true;
+
+	public string? ButtonName { get; set; }
+	private int Sid;
+	private string? email;
+	private string? errorMessage;
+	private int result;
+	private IEnumerable<Claim> claims = Enumerable.Empty<Claim>();
+
+	private List<StdModel> stdData { get; set; } = new List<StdModel>();
+
+	private List<StdGroupModel> stdgroupData { get; set; } = new List<StdGroupModel>();
+	private StdGroupModel stdgroupModel { get; set; } = new StdGroupModel();
+
+	protected override async Task OnInitializedAsync()
+	{
+		var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+		var user = authState.User;
+
+		if (user.Identity is not null && user.Identity.IsAuthenticated)
+		{
+			claims = user.Claims;
+			email = user.FindFirst(c => c.Type == ClaimTypes.Email)?.Value;
+			stdData = StdDAL.GetStdByEmail(email);
+			foreach (var item in stdData)
+			{
+				Sid = item.StdID;
+			}
+			stdgroupData = StdGroupDAL.GetSGroupByStd(Sid);
+
+			if (!string.IsNullOrEmpty(SgID))
+			{
+				ButtonName = "Edit";
+				stdgroupData = StdGroupDAL.GetSGroupByID(int.Parse(SgID));
+				foreach (var item in stdgroupData)
+				{
+					stdgroupModel.SgID = item.SgID;
+					stdgroupModel.SgName = item.SgName;
+					stdgroupModel.StdID = item.StdID;
+					stdgroupModel.SgIsActive = item.SgIsActive;
+				}
+			}
+			else
+			{
+				ButtonName = "Save";
+			}
+		}
+	}
+
+	private void SaveStdGroup()
+	{
+		if (ButtonName == "Save")
+		{
+			stdgroupModel.StdID = Sid;
+			result = StdGroupDAL.CreateSGroup(stdgroupModel);
+			if (result == 1)
+			{
+				nm.NavigateTo("stdgroup/group");
+			}
+			else
+			{
+				errorMessage = "Failed to save student group";
+				ShowAlert();
+			}
+		}
+		else
+		{
+			stdgroupModel.SgID = int.Parse(SgID);
+			stdgroupModel.StdID = Sid;
+			result = StdGroupDAL.EditSGroup(stdgroupModel);
+			if (result == 1)
+			{
+				nm.NavigateTo("projectrequest/requestproject");
+			}
+			else
+			{
+				errorMessage = "Failed to edit student group";
+				ShowAlert();
+			}
+		}
+	}
+
+	private async Task ShowAlert()
+	{
+		showAlert = false;
+		StateHasChanged();
+
+		await Task.Delay(3000); // Wait for 5 seconds
+
+		await InvokeAsync(() =>
+		{
+			showAlert = true;
+			StateHasChanged();
+		});
+	}
+
+}

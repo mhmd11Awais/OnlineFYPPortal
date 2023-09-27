@@ -1,0 +1,101 @@
+﻿@page "/facl/editprojecttasks/{TaskID}"
+@using ClassLibraryDAL
+@using ClassLibraryModel
+@using System.Security.Claims
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IJSRuntime JS
+@inject NavigationManager nm
+@attribute [Authorize(Roles = "Faculty")]
+
+<h3>EditProjectTask</h3>
+<br />
+<div class="alert alert-success" role="alert" hidden="@showAlert">
+	@errorMessage
+</div>
+
+<EditForm Model="projecttaskModel" OnSubmit="SaveTask">
+	<br />
+	<label>Task Details</label>
+	<br />
+	<textarea rows="4" cols="50" @bind="projecttaskModel.TaskDetails" placeholder="Enter Task Details"></textarea>
+	<br />
+	<br />
+	<button type="submit" class="btn btn-outline-primary btn-sm">@ButtonName</button>
+</EditForm>
+
+@code {
+	[Parameter]
+	public string? TaskID { get; set; }
+
+	private bool? showAlert = true;
+
+	public string? ButtonName { get; set; }
+	private string? email;
+	private string? errorMessage;
+	private int result;
+	private IEnumerable<Claim> claims = Enumerable.Empty<Claim>();
+
+	private List<ProjectTaskModel> projecttaskData { get; set; } = new List<ProjectTaskModel>();
+	private ProjectTaskModel projecttaskModel { get; set; } = new ProjectTaskModel();
+
+	protected override async Task OnInitializedAsync()
+	{
+		var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+		var user = authState.User;
+
+		if (user.Identity is not null && user.Identity.IsAuthenticated)
+		{
+			claims = user.Claims;
+			email = user.FindFirst(c => c.Type == ClaimTypes.Email)?.Value;
+
+			if (!string.IsNullOrEmpty(TaskID))
+			{
+				ButtonName = "Edit";
+				projecttaskData = ProjectTaskDAL.GetTaskByID(int.Parse(TaskID));
+				foreach (var item in projecttaskData)
+				{
+					projecttaskModel.TaskID = item.TaskID;
+					projecttaskModel.TaskTitle = item.TaskTitle;
+					projecttaskModel.TaskDetails = item.TaskDetails;
+					projecttaskModel.SupID = item.SupID;
+					projecttaskModel.ProjID = item.ProjID;
+					projecttaskModel.SgID = item.SgID;
+					projecttaskModel.TaskIsCompleted = item.TaskIsCompleted;
+				}
+			}
+		}
+	}
+
+	private void SaveTask()
+	{
+		if (ButtonName == "Edit")
+		{
+			projecttaskModel.TaskID = int.Parse(TaskID);
+			result = ProjectTaskDAL.EditTaskDetails(projecttaskModel);
+			if (result == 1)
+			{
+				nm.NavigateTo("facl/projecttasks");
+			}
+			else
+			{
+				errorMessage = "Failed to Update Task Details";
+				ShowAlert();
+			}
+		}
+	}
+
+	private async Task ShowAlert()
+	{
+		showAlert = false;
+		StateHasChanged();
+
+		await Task.Delay(3000); // Wait for 5 seconds
+
+		await InvokeAsync(() =>
+		{
+			showAlert = true;
+			StateHasChanged();
+		});
+	}
+
+}

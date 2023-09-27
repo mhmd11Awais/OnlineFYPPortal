@@ -1,0 +1,118 @@
+﻿@page "/others/gender"
+@using ClassLibraryDAL
+@using ClassLibraryModel
+@attribute [Authorize(Roles = "Administrator")]
+
+<h3 class="mt-5">Gender</h3>
+
+<br />
+<EditForm Model="genModel" OnSubmit="SaveGender">
+    <div class="d-flex align-items-center">
+        <label class="me-2">Gender</label>
+        <input type="text" class="form-control" @bind-value="genModel.GenderName" placeholder="Enter Gender" />
+        <button type="submit" class="btn btn-success btn-sm ms-2">@ButtonName</button>
+    </div>
+</EditForm>
+<br />
+
+<table class="table table-bordered mt-3">
+    <thead class="thead-dark">
+        <tr>
+            <th scope="col">Sr#</th>
+            <th scope="col">Gender</th>
+            <th scope="col">Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in genderData)
+        {
+            <tr>
+                <td>@item.GenderID</td>
+                <td>@item.GenderName</td>
+                <td>
+                    <button class="btn btn-primary btn-sm me-2" @onclick="(()=>EditGender(item.GenderID))">Edit</button>
+                    <button class="btn btn-danger btn-sm" @onclick="(()=>DeleteGender(item.GenderID))">Delete</button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+
+@code {
+
+    private List<GenderModel> genderData { get; set; } = new List<GenderModel>();
+
+    public string? ButtonName { get; set; }
+
+    public int genderID { get; set; }
+    private List<GenderModel> genData { get; set; }
+
+    private GenderModel genderModel { get; set; } = new GenderModel();
+    private GenderModel genModel { get; set; } = new GenderModel();
+
+    protected override void OnInitialized()
+    {
+        LoadGender();
+        ButtonName = "Save";
+    }
+
+    private void LoadGender()
+    {
+        genderData = GenderDAL.GetGender();
+    }
+
+    private void DeleteGender(int GenderID)
+    {
+        if (GenderDAL.DeleteGender(GenderID) == 1)
+        {
+            LoadGender();
+        }
+    }
+
+    private void EditGender(int GenderID)
+    {
+        ButtonName = "Edit";
+        genderID = GenderID;
+        GetData();
+        foreach (var item in genData)
+        {
+            genModel.GenderID = item.GenderID;
+            genModel.GenderName = item.GenderName;
+        }
+    }
+
+    private void SaveGender()
+    {
+        if (ButtonName == "Save")
+        {
+            if (GenderDAL.SaveGender(genModel) == 1)
+            {
+                LoadGender();
+            }
+            genModel.GenderName = "";
+        }
+        else
+        {
+            genModel.GenderID = genderID;
+            if (GenderDAL.EditGender(genModel) == 1)
+            {
+                LoadGender();
+            }
+            ButtonName = "Save";
+            genModel.GenderName = "";
+        }
+    }
+
+    private void GetData()
+    {
+        genData = GenderDAL.GetGenderByID(genderID);
+    }
+
+    private void AddGender()
+    {
+        genModel.GenderName = "";
+        ButtonName = "Save";
+    }
+
+}

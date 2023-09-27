@@ -1,0 +1,119 @@
+﻿@page "/others/roles"
+@using ClassLibraryDAL
+@using ClassLibraryModel
+@attribute [Authorize(Roles = "Administrator")]
+
+<h3 class="mt-5">Roles</h3>
+
+<br />
+<div>
+    <EditForm Model="rlModel" OnSubmit="SaveRoles">
+        <div class="d-flex align-items-center">
+            <label class="me-2">Roles</label>
+            <input type="text" class="form-control" @bind-value="rlModel.RoleName" placeholder="Enter Roles" />
+            <button type="submit" class="btn btn-success btn-sm ms-2">@ButtonName</button>
+        </div>
+    </EditForm>
+    <br />
+</div>
+
+
+<table class="table table-bordered mt-3">
+    <thead class="thead-dark">
+        <tr>
+            <th scope="col">Sr#</th>
+            <th scope="col">Role</th>
+            <th scope="col">Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in roleData)
+        {
+            <tr>
+                <td>@item.RoleID</td>
+                <td>@item.RoleName</td>
+                <td>
+                    <button class="btn btn-primary btn-sm me-2" @onclick="(()=>EditRoles(item.RoleID))">Edit</button>
+                    <button class="btn btn-danger btn-sm" @onclick="(()=>DeleteRoles(item.RoleID))">Delete</button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+
+@code {
+    private List<RoleModel> roleData { get; set; } = new List<RoleModel>();
+
+    public string? ButtonName { get; set; }
+
+    public int roleID { get; set; }
+    private List<RoleModel> rlData { get; set; }
+
+    private RoleModel roleModel { get; set; } = new RoleModel();
+    private RoleModel rlModel { get; set; } = new RoleModel();
+
+    protected override void OnInitialized()
+    {
+        LoadRoles();
+        ButtonName = "Save";
+    }
+
+    private void LoadRoles()
+    {
+        roleData = RoleDAL.GetRoles();
+    }
+
+    private void DeleteRoles(int RoleID)
+    {
+        if (RoleDAL.DeleteRoles(RoleID) == 1)
+        {
+            LoadRoles();
+        }
+    }
+
+    private void EditRoles(int RoleID)
+    {
+        ButtonName = "Edit";
+        roleID = RoleID;
+        GetData();
+        foreach (var item in rlData)
+        {
+            rlModel.RoleID = item.RoleID;
+            rlModel.RoleName = item.RoleName;
+        }
+    }
+
+    private void SaveRoles()
+    {
+        if (ButtonName == "Save")
+        {
+            if (RoleDAL.SaveRoles(rlModel) == 1)
+            {
+                LoadRoles();
+            }
+            rlModel.RoleName = "";
+        }
+        else
+        {
+            rlModel.RoleID = roleID;
+            if (RoleDAL.EditRoles(rlModel) == 1)
+            {
+                LoadRoles();
+            }
+            ButtonName = "Save";
+            rlModel.RoleName = "";
+        }
+    }
+
+    private void GetData()
+    {
+        rlData = RoleDAL.GetRolesByID(roleID);
+    }
+
+    private void AddRole()
+    {
+        rlModel.RoleName = "";
+        ButtonName = "Save";
+    }
+}

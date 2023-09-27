@@ -1,0 +1,96 @@
+﻿@page "/facl/editfaclprofile"
+@page "/facl/editfaclprofile/{FaclID}"
+@using ClassLibraryModel
+@using ClassLibraryDAL
+@inject NavigationManager nm
+@attribute [Authorize(Roles = "Faculty")]
+
+<h3>Edit Faculty Profile</h3>
+
+<style>
+	#imgstyle {
+		width: 90px;
+		height: 90px;
+	}
+</style>
+
+<br />
+<EditForm Model="faclModel" OnSubmit="SaveFacl">
+	<br />
+	<label>Phone Number</label>
+	<br />
+	<input type="text" @bind-value="faclModel.FaclPhoneNo" placeholder="Enter Phone No" />
+	<br />
+	<br />
+	<button type="submit" class="btn btn-outline-primary btn-sm">@ButtonName</button>
+	<br />
+
+</EditForm>
+
+@code {
+
+	[Parameter]
+	public string? FaclID { get; set; }
+
+	public string? ButtonName { get; set; }
+
+	private List<FaclModel>? faclData { get; set; }
+	private FaclModel faclModel { get; set; } = new FaclModel();
+
+	protected override void OnInitialized()
+	{
+		if (!string.IsNullOrEmpty(FaclID))
+		{
+			ButtonName = "Edit";
+			GetData();
+			foreach (var item in faclData)
+			{
+				faclModel.FaclID = item.FaclID;
+				faclModel.FaclFirstName = item.FaclFirstName;
+				faclModel.FaclLastName = item.FaclLastName;
+				faclModel.GenderID = item.GenderID;
+				faclModel.FaclCNIC = item.FaclCNIC;
+				faclModel.FaclPhoneNo = item.FaclPhoneNo;
+				faclModel.FaclEmail = item.FaclEmail;
+				faclModel.CountryID = item.CountryID;
+				faclModel.CityID = item.CityID;
+				faclModel.FaclAddress = item.FaclAddress;
+				faclModel.FaclLastJob = item.FaclLastJob;
+				faclModel.FaclExperience = item.FaclExperience;
+				faclModel.OrgID = item.OrgID;
+				faclModel.DeptID = item.DeptID;
+				faclModel.FaclImage = item.FaclImage;
+				faclModel.FaclIsActive = item.FaclIsActive;
+			}
+		}
+		else
+		{
+			ButtonName = "Save";
+		}
+	}
+
+	private void SaveFacl()
+	{
+		if (ButtonName == "Save")
+		{
+			if (FaclDAL.SaveFacl(faclModel) == 1)
+			{
+				nm.NavigateTo("/facl/faclprofile");
+			}
+		}
+		else
+		{
+			faclModel.FaclID = int.Parse(FaclID);
+			if (FaclDAL.UpdateFaclProfile(faclModel) == 1)
+			{
+				nm.NavigateTo("/facl/faclprofile");
+			}
+		}
+	}
+
+	private void GetData()
+	{
+		faclData = FaclDAL.GetFaclByID(int.Parse(FaclID));
+	}
+}
+

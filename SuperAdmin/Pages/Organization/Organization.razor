@@ -1,0 +1,102 @@
+﻿@page "/org/organizations"
+@using ClassLibraryDAL
+@using ClassLibraryModel
+@inject IJSRuntime JSRuntime
+@attribute [Authorize(Roles = "Administrator")]
+
+<h3 class="text-center mb-4">Organizations</h3>
+
+<style>
+    .card {
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        transition: transform 0.2s ease-in-out;
+    }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+    #imgLogo {
+        width: 90px;
+        height: 90px;
+        object-fit: cover;
+        border-radius: 50%;
+        margin: 0 auto 10px;
+        display: block;
+    }
+
+    .card-text {
+        margin-bottom: 5px;
+    }
+
+    .card-footer {
+        background-color: #f8f9fa;
+        border-top: none;
+        border-bottom-left-radius: 10px;
+        border-bottom-right-radius: 10px;
+    }
+</style>
+
+<div class="container">
+    <div class="row row-cols-1 row-cols-md-2 g-4">
+        @foreach (var item in orgData)
+        {
+            <div class="col">
+                <div class="card h-100"><br />
+                    <img class="card-img-top" id="imgLogo" src="@item.OrgLogo" alt="Organization Logo">
+                    <div class="card-body">
+                        <p class="card-text">Organization ID: @item.OrgID</p>
+                        <h5 class="card-title">@item.OrgName</h5>
+                        <h6 class="card-subtitle mb-2 text-muted">Phone No: @item.OrgPhoneNo</h6>
+                        <h6 class="card-subtitle mb-2 text-muted">Email: @item.OrgEmail</h6>
+                        <h6 class="card-subtitle mb-2 text-muted">Country: @item.CountryName</h6>
+                        <h6 class="card-subtitle mb-2 text-muted">City: @item.CityName</h6>
+                        <h6 class="card-subtitle mb-2 text-muted">Address: @item.OrgAddress</h6>
+                        <h6 class="card-subtitle mb-2 text-muted">Active: @item.OrgIsActive</h6>
+                    </div>
+                    <div class="card-footer">
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="org/addneworg/@item.OrgID" class="btn btn-outline-primary me-md-2 mb-2 mb-md-0">Edit</a>
+                            <button class="btn btn-outline-danger" @onclick="(()=>ConfirmDelete(item.OrgID))">Delete</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+
+@code {
+
+	private List<OrgModel> orgData { get; set; } = new List<OrgModel>();
+
+	protected override void OnInitialized()
+	{
+		LoadOrg();
+	}
+
+	private void LoadOrg()
+	{
+		orgData = OrgDAL.GetOrg();
+	}
+
+	private async Task ConfirmDelete(int OrgID)
+	{
+		bool confirmed = await JSRuntime.InvokeAsync<bool>("confirm", "Are you sure you want to delete this item?");
+		if (confirmed)
+		{
+			DeleteOrg(OrgID);
+		}
+	}
+
+	private void DeleteOrg(int OrgID)
+	{
+		if (OrgDAL.DeleteOrg(OrgID) == 1)
+		{
+			LoadOrg();
+		}
+	}
+
+}

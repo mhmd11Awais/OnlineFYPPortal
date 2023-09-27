@@ -1,0 +1,93 @@
+﻿@page "/facl/faculty"
+@using ClassLibraryDAL
+@using ClassLibraryModel
+@inject IJSRuntime JSRuntime
+@attribute [Authorize(Roles = "Administrator")]
+
+<h3 class="text-center mt-5">Faculty</h3>
+
+<style>
+    .faculty-card {
+        max-width: 300px;
+        margin: 0 auto;
+    }
+
+    .faculty-image {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        object-fit: cover;
+        margin: 0 auto;
+    }
+</style>
+
+<div class="container mt-4">
+    <div class="row row-cols-1 row-cols-md-2 g-4">
+        @foreach (var item in faclData)
+        {
+            <div class="col">
+                <div class="card h-100 faculty-card">
+                    <img class="card-img-top faculty-image" src="@item.FaclImage" alt="Faculty Image">
+                    <div class="card-body">
+                        <h5 class="card-title text-center">@item.FaclFirstName @item.FaclLastName</h5>
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item"><strong>Faculty ID:</strong> @item.FaclID</li>
+                            <li class="list-group-item"><strong>Gender:</strong> @item.GenderName</li>
+                            <li class="list-group-item"><strong>CNIC:</strong> @item.FaclCNIC</li>
+                            <li class="list-group-item"><strong>Phone No:</strong> @item.FaclPhoneNo</li>
+                            <li class="list-group-item"><strong>Email:</strong> @item.FaclEmail</li>
+                            <li class="list-group-item"><strong>Country:</strong> @item.CountryName</li>
+                            <li class="list-group-item"><strong>City:</strong> @item.CityName</li>
+                            <li class="list-group-item"><strong>Address:</strong> @item.FaclAddress</li>
+                            <li class="list-group-item"><strong>Last Job:</strong> @item.FaclLastJob</li>
+                            <li class="list-group-item"><strong>Experience:</strong> @item.FaclExperience</li>
+                            <li class="list-group-item"><strong>Position:</strong> @item.PosTitle</li>
+                            <li class="list-group-item"><strong>Qualification:</strong> @item.QualTitle</li>
+                            <li class="list-group-item"><strong>Organization:</strong> @item.OrgName</li>
+                            <li class="list-group-item"><strong>Department:</strong> @item.DeptName</li>
+                            <li class="list-group-item"><strong>Active:</strong> @item.FaclIsActive</li>
+                        </ul>
+                    </div>
+                    <div class="card-footer">
+                        <div class="d-flex justify-content-end">
+                            <a href="facl/addnewfacl/@item.FaclID" class="btn btn-primary me-2">Edit</a>
+                            <button class="btn btn-danger" @onclick="(()=>ConfirmDelete(item.FaclID))">Delete</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private List<FaclModel> faclData { get; set; } = new List<FaclModel>();
+
+    protected override void OnInitialized()
+    {
+        LoadFacl();
+    }
+
+    private void LoadFacl()
+    {
+        faclData = FaclDAL.GetFacl();
+    }
+
+    private async Task ConfirmDelete(int FaclID)
+    {
+        bool confirmed = await JSRuntime.InvokeAsync<bool>("confirm", "Are you sure you want to delete this item?");
+        if (confirmed)
+        {
+            DeleteFacl(FaclID);
+        }
+    }
+
+    private void DeleteFacl(int FaclID)
+    {
+        int i = FaclDAL.DeleteFacl(FaclID);
+        if (i == 1)
+        {
+            LoadFacl();
+        }
+    }
+}

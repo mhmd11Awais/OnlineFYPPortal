@@ -1,0 +1,132 @@
+﻿@page "/stdgroup/joingroup"
+@using ClassLibraryDAL
+@using ClassLibraryModel
+@using System.Security.Claims
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IJSRuntime JS
+@inject NavigationManager nm
+@attribute [Authorize(Roles = "Student")]
+
+<h3 class="text-center mb-4">Join Group</h3>
+
+<div class="alert alert-success" role="alert" hidden="@showAlert">
+	@errorMessage
+</div>
+
+<EditForm Model="sgmemberModel" OnSubmit="SaveStdGroup">
+	<div class="mb-3">
+		<label for="groupID" class="form-label">Group ID</label>
+		<input type="number" class="form-control" id="groupID" @bind-value="sgmemberModel.SgID" placeholder="Enter Group ID" />
+	</div>
+
+	<div class="d-grid gap-2 d-md-flex justify-content-md-end">
+		<button type="submit" class="btn btn-outline-primary btn-sm">@ButtonName</button>
+	</div>
+</EditForm>
+
+<br />
+
+
+@code {
+
+	[Parameter]
+	public string? SgID { get; set; }
+
+	private bool? showAlert = true;
+
+	public string? ButtonName { get; set; }
+	private int Sid;
+	private string? email;
+	private string? errorMessage;
+	private int result;
+	private IEnumerable<Claim> claims = Enumerable.Empty<Claim>();
+
+	private List<StdModel> stdData { get; set; } = new List<StdModel>();
+
+	private List<SGMemberModel> sgmemberData { get; set; } = new List<SGMemberModel>();
+	private SGMemberModel sgmemberModel { get; set; } = new SGMemberModel();
+
+	protected override async Task OnInitializedAsync()
+	{
+		var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+		var user = authState.User;
+
+		if (user.Identity is not null && user.Identity.IsAuthenticated)
+		{
+			claims = user.Claims;
+			email = user.FindFirst(c => c.Type == ClaimTypes.Email)?.Value;
+			stdData = StdDAL.GetStdByEmail(email);
+			foreach (var item in stdData)
+			{
+				Sid = item.StdID;
+			}
+			sgmemberData = SGMemberDAL.GetSGMemberByStd(Sid);
+
+			if (!string.IsNullOrEmpty(SgID))
+			{
+				ButtonName = "Edit";
+				sgmemberData = SGMemberDAL.GetSGMemberByID(int.Parse(SgID));
+				foreach (var item in sgmemberData)
+				{
+					sgmemberModel.SgmID = item.SgmID;
+					sgmemberModel.StdID = item.StdID;
+					sgmemberModel.SgID = item.SgID;
+					sgmemberModel.SgmIsLeader = item.SgmIsLeader;
+					sgmemberModel.SgmIsActive = item.SgmIsActive;
+				}
+			}
+			else
+			{
+				ButtonName = "Save";
+			}
+		}
+	}
+
+	private void SaveStdGroup()
+	{
+		if (ButtonName == "Save")
+		{
+			sgmemberModel.StdID = Sid;
+			result = SGMemberDAL.JoinSGroup(sgmemberModel);
+			if (result == 1)
+			{
+				nm.NavigateTo("stdgroup/group");
+			}
+			else
+			{
+				errorMessage = "Failed to join student group";
+				ShowAlert();
+			}
+		}
+		else
+		{
+			sgmemberModel.SgID = int.Parse(SgID);
+			sgmemberModel.StdID = Sid;
+			result = SGMemberDAL.EditSGMember(sgmemberModel);
+			if (result == 1)
+			{
+				nm.NavigateTo("stdgroup/group");
+			}
+			else
+			{
+				errorMessage = "Failed to edit group member details";
+				ShowAlert();
+			}
+		}
+	}
+
+	private async Task ShowAlert()
+	{
+		showAlert = false;
+		StateHasChanged();
+
+		await Task.Delay(3000); // Wait for 5 seconds
+
+		await InvokeAsync(() =>
+		{
+			showAlert = true;
+			StateHasChanged();
+		});
+	}
+
+}

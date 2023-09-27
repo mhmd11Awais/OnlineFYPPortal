@@ -1,0 +1,119 @@
+﻿@page "/facl/requestresponse/{ProjID}"
+@using ClassLibraryDAL
+@using ClassLibraryModel
+@using System.Security.Claims
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IJSRuntime JS
+@inject NavigationManager nm
+@attribute [Authorize(Roles = "Faculty")]
+
+<h3>Project Requests</h3>
+
+<div class="alert alert-success" role="alert" hidden="@showAlert">
+	@errorMessage
+</div>
+
+<br />
+<br />
+<div class="row row-cols-1 row-cols-md-2 g-4">
+	@foreach (var item in projectRequestData)
+	{
+		<div class="col">
+			<div class="card h-100">
+				<div class="card-body">
+					<h6 class="card-title">Request ID: @item.RequestID</h6>
+					<h5 class="card-title">Project Title: @item.ProjTitle</h5>
+					@*<h6 class="card-title">Project Details: @item.ProjDetails</h6>*@
+					<h6 class="card-title">Student: @item.StdFirstName @item.StdLastName</h6>
+					<h5 class="card-title">Date: @item.RequestDate</h5>
+					@if (item.IsAccepted!=null)
+					{
+						<h5 class="card-title">Accepted: @item.IsAccepted</h5>
+					}
+				</div>
+				@if (item.IsAccepted == null)
+				{
+					<div class="card-footer">
+						<div class="d-grid gap-2 d-md-flex justify-content-md-end">
+							<button class="btn btn-outline-primary btn-sm" @onclick="(()=>AcceptProjectRequest(item.RequestID))">Accept</button>
+							<button class="btn btn-outline-danger btn-sm" @onclick="(()=>RejectProjectRequest(item.RequestID))">Reject</button>
+						</div>
+					</div>
+				}
+			</div>
+		</div>
+	}
+</div>
+
+@code {
+	[Parameter]
+	public string? ProjID { get; set; }
+
+	private string? email;
+	private IEnumerable<Claim> claims = Enumerable.Empty<Claim>();
+
+	private bool? showAlert = true;
+	private string? errorMessage;
+
+	private List<ProjectRequestModel> projectRequestData { get; set; } = new List<ProjectRequestModel>();
+	private ProjectRequestModel projectRequestModel { get; set; } = new ProjectRequestModel();
+
+	protected override async Task OnInitializedAsync()
+	{
+		var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+		var user = authState.User;
+
+		if (user.Identity is not null && user.Identity.IsAuthenticated)
+		{
+			claims = user.Claims;
+			email = user.FindFirst(c => c.Type == ClaimTypes.Email)?.Value;
+			projectRequestData = ProjectRequestDAL.GetProjectRequestsByProject(int.Parse(ProjID));
+		}
+	}
+
+	private void AcceptProjectRequest(int RequestID)
+	{
+		projectRequestModel.RequestID = RequestID;
+		projectRequestModel.IsAccepted = true;
+		if (ProjectRequestDAL.RespondToProjectRequest(projectRequestModel) == 1)
+		{
+			nm.NavigateTo("facl/pendingprojects");
+		}
+		else
+		{
+			errorMessage = "Failed to accept project request";
+			ShowAlert();
+		}
+		nm.NavigateTo("facl/pendingprojects");
+	}
+
+	private void RejectProjectRequest(int RequestID)
+	{
+		projectRequestModel.RequestID = RequestID;
+		projectRequestModel.IsAccepted = false;
+		if (ProjectRequestDAL.RespondToProjectRequest(projectRequestModel) == 1)
+		{
+			nm.NavigateTo("facl/projectproposal");
+		}
+		else
+		{
+			errorMessage = "Failed to reject project request";
+			ShowAlert();
+		}
+	}
+
+	private async Task ShowAlert()
+	{
+		showAlert = false;
+		StateHasChanged();
+
+		await Task.Delay(3000); // Wait for 5 seconds
+
+		await InvokeAsync(() =>
+		{
+			showAlert = true;
+			StateHasChanged();
+		});
+	}
+
+}

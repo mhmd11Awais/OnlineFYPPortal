@@ -1,0 +1,125 @@
+﻿@page "/projectrequest/selectproject"
+@using ClassLibraryDAL
+@using ClassLibraryModel
+@using System.Security.Claims
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IJSRuntime JS
+@inject NavigationManager nm
+@attribute [Authorize(Roles = "Student")]
+
+<h3 class="text-center	mb-4">Select Project</h3>
+
+<div class="d-grid gap-2 d-md-flex justify-content-md-end">
+	<a href="projectrequest/requestproject" class="btn btn-outline-primary me-md-2 mb-2 mb-md-0">View Requests</a>
+</div>
+
+<div class="alert alert-success" role="alert" hidden="@showAlert">
+	@errorMessage
+</div>
+
+
+<br />
+<br />
+<div class="row row-cols-1 row-cols-md-2 g-4">
+	@foreach (var item in projectData)
+	{
+		<div class="col">
+			<div class="card h-100 border-primary shadow">
+				<div class="card-body">
+					<h6 class="card-title">Project ID: @item.ProjID</h6>
+					<h5 class="card-title">@item.ProjTitle</h5>
+					<h6 class="card-title">Faculty: @item.FaclFirstName @item.FaclLastName</h6>
+					<h6 class="card-title">Details: @item.ProjDetails</h6>
+				</div>
+				<div class="card-footer">
+					<div class="d-grid gap-2 d-md-flex justify-content-md-end">
+						<button class="btn btn-outline-primary btn-sm" @onclick="(()=>RequestProject(item.ProjID))">Request</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	}
+</div>
+
+<style>
+	.card {
+		border-width: 2px;
+		border-radius: 10px;
+		transition: transform 0.3s;
+	}
+
+		.card:hover {
+			transform: translateY(-5px);
+		}
+
+	.border-primary {
+		border-color: #007bff !important;
+	}
+
+	.text-primary {
+		color: #007bff !important;
+	}
+</style>
+
+@code {
+
+	private int Sid;
+	private string? email;
+	private IEnumerable<Claim> claims = Enumerable.Empty<Claim>();
+
+	private bool? showAlert = true;
+	private string? errorMessage;
+
+	private List<StdModel> stdData { get; set; } = new List<StdModel>();
+	private List<ProjectModel> projectData { get; set; } = new List<ProjectModel>();
+
+	private ProjectRequestModel projectRequestModel { get; set; } = new ProjectRequestModel();
+
+	protected override async Task OnInitializedAsync()
+	{
+		var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+		var user = authState.User;
+
+		if (user.Identity is not null && user.Identity.IsAuthenticated)
+		{
+			claims = user.Claims;
+			email = user.FindFirst(c => c.Type == ClaimTypes.Email)?.Value;
+			stdData = StdDAL.GetStdByEmail(email);
+			foreach (var item in stdData)
+			{
+				Sid = item.StdID;
+			}
+			projectData = ProjectDAL.ViewAvailableProjects();
+		}
+	}
+
+	private void RequestProject(int ProjID)
+	{
+		projectRequestModel.ProjID = ProjID;
+		projectRequestModel.StdID = Sid;
+		if (ProjectRequestDAL.RequestProject(projectRequestModel) == 1)
+		{
+			nm.NavigateTo("projectrequest/requestproject");
+		}
+		else
+		{
+			errorMessage = "Failed to request on project";
+			ShowAlert();
+		}
+	}
+
+	private async Task ShowAlert()
+	{
+		showAlert = false;
+		StateHasChanged();
+
+		await Task.Delay(3000); // Wait for 5 seconds
+
+		await InvokeAsync(() =>
+		{
+			showAlert = true;
+			StateHasChanged();
+		});
+	}
+
+}

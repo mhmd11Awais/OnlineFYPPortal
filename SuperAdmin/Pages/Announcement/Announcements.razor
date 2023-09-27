@@ -1,0 +1,66 @@
+﻿@page "/ann/announcements"
+@using ClassLibraryDAL
+@using ClassLibraryModel
+@inject IJSRuntime JSRuntime
+@attribute [Authorize(Roles = "Administrator")]
+
+<h3 class="text-center mt-5">Announcements</h3>
+
+<div class="d-flex justify-content-end mt-3">
+    <a href="ann/editannouncement" class="btn btn-primary btn-sm">Create Announcement</a>
+</div>
+
+<div class="row row-cols-1 row-cols-md-2 g-4 mt-4">
+    @foreach (var item in announcementData)
+    {
+        <div class="col">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">Created: @item.AnnouncementDate</h5>
+                    @if (item.UpdatedDate != null)
+                    {
+                        <h5 class="card-title mb-3">Updated: (@item.UpdatedDate)</h5>
+                    }
+                    <p class="card-text">@item.AnnouncementText</p>
+                </div>
+                <div class="card-footer bg-white border-0">
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="ann/editannouncement/@item.AnnouncementID" class="btn btn-outline-primary btn-sm me-md-2">Edit</a>
+                        <button class="btn btn-outline-danger btn-sm" @onclick="(()=>ConfirmDelete(item.AnnouncementID))">Delete</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private List<AnnouncementModel> announcementData { get; set; } = new List<AnnouncementModel>();
+
+    protected override void OnInitialized()
+    {
+        LoadAnnouncements();
+    }
+
+    private void LoadAnnouncements()
+    {
+        announcementData = AnnouncementDAL.GetAnnouncements();
+    }
+
+    private async Task ConfirmDelete(int AnnouncementID)
+    {
+        bool confirmed = await JSRuntime.InvokeAsync<bool>("confirm", "Are you sure you want to delete this item?");
+        if (confirmed)
+        {
+            DeleteAnnouncement(AnnouncementID);
+        }
+    }
+
+    private void DeleteAnnouncement(int AnnouncementID)
+    {
+        if (AnnouncementDAL.DeleteAnnouncement(AnnouncementID) == 1)
+        {
+            LoadAnnouncements();
+        }
+    }
+}

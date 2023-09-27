@@ -1,0 +1,89 @@
+﻿@page "/qual/addnewqual"
+@page "/qual/addnewqual/{QualID}"
+@using ClassLibraryModel
+@using ClassLibraryDAL
+@inject NavigationManager nm
+@attribute [Authorize(Roles = "Administrator")]
+
+<h3>AddNewQualification</h3>
+
+<br />
+<EditForm Model="qualModel" OnSubmit="SaveQual">
+
+	<br />
+	<label>Title</label>
+	<br />
+	<input type="text" @bind-value="qualModel.QualTitle" placeholder="Enter Qualification Title" />
+	<br />
+	<label>Is Active</label>
+	<br />
+	<div>
+		<input type="radio" id="true" name="qualModel.QualIsActive" @bind="qualModel.QualIsActive" checked>
+		<label for="true">Active</label>
+	</div>
+	<div>
+		<input type="radio" id="false" name="qualModel.QualIsActive" @bind="qualModel.QualIsActive">
+		<label for="false">Inactive</label>
+	</div>
+	<br />
+	<br />
+	<button type="submit" class="btn btn-outline-primary btn-sm">@ButtonName</button>
+
+</EditForm>
+<br />
+
+@code {
+
+	[Parameter]
+	public string? QualID { get; set; }
+	public string? ButtonName { get; set; }
+	private List<QualModel>? qualData { get; set; }
+
+	private QualModel qualModel { get; set; } = new QualModel();
+
+	protected override void OnInitialized()
+	{
+		if (!string.IsNullOrEmpty(QualID))
+		{
+			ButtonName = "Edit";
+			GetData();
+			foreach (var item in qualData)
+			{
+				qualModel.QualID = item.QualID;
+				qualModel.QualTitle = item.QualTitle;
+				qualModel.QualIsActive = item.QualIsActive;
+			}
+		}
+		else
+		{
+			ButtonName = "Save";
+			qualModel.QualIsActive = true;
+		}
+	}
+
+	private void SaveQual()
+	{
+		if (ButtonName == "Save")
+		{
+			if (QualDAL.SaveQual(qualModel) == 1)
+			{
+				nm.NavigateTo("qual/qualifications");
+			}
+		}
+		else
+		{
+			qualModel.QualID = int.Parse(QualID);
+			if (QualDAL.EditQual(qualModel) == 1)
+			{
+				nm.NavigateTo("qual/qualifications");
+			}
+		}
+		
+	}
+
+	private void GetData()
+	{
+		qualData = QualDAL.GetQualByID(int.Parse(QualID));
+	}
+
+}

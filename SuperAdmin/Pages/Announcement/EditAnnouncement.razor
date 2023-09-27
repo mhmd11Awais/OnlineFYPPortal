@@ -1,0 +1,73 @@
+﻿@page "/ann/editannouncement"
+@page "/ann/editannouncement/{AnnouncementID}"
+@using ClassLibraryDAL
+@using ClassLibraryModel
+@inject NavigationManager nm
+@attribute [Authorize(Roles = "Administrator")]
+
+<h3 class="text-center mt-5">Create/Update Announcement</h3>
+
+<div class="mt-4">
+    <EditForm Model="announcementModel" OnSubmit="SaveAnnouncement">
+        <div class="mb-3">
+            <label for="announcementText" class="form-label">Text</label>
+            <textarea id="announcementText" class="form-control" rows="4" @bind="@announcementModel.AnnouncementText" placeholder="Enter Announcement"></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary btn-sm">@ButtonName</button>
+    </EditForm>
+</div>
+
+@code {
+    [Parameter]
+    public string? AnnouncementID { get; set; }
+
+    public string? ButtonName { get; set; }
+
+    private List<AnnouncementModel>? announcementData { get; set; }
+    private AnnouncementModel announcementModel { get; set; } = new AnnouncementModel();
+
+
+    protected override void OnInitialized()
+    {
+        if (!string.IsNullOrEmpty(AnnouncementID))
+        {
+            ButtonName = "Edit";
+            GetData();
+            foreach (var item in announcementData)
+            {
+                announcementModel.AnnouncementID = item.AnnouncementID;
+                announcementModel.AnnouncementText = item.AnnouncementText;
+                announcementModel.AnnouncementDate = item.AnnouncementDate;
+                announcementModel.UpdatedDate = item.UpdatedDate;
+            }
+        }
+        else
+        {
+            ButtonName = "Save";
+        }
+    }
+
+    private void SaveAnnouncement()
+    {
+        if (ButtonName == "Save")
+        {
+            if (AnnouncementDAL.InsertAnnouncement(announcementModel) == 1)
+            {
+                nm.NavigateTo("ann/announcements");
+            }
+        }
+        else
+        {
+            announcementModel.AnnouncementID = int.Parse(AnnouncementID);
+            if (AnnouncementDAL.UpdateAnnouncement(announcementModel) == 1)
+            {
+                nm.NavigateTo("ann/announcements");
+            }
+        }
+    }
+
+    private void GetData()
+    {
+        announcementData = AnnouncementDAL.GetAnnouncementByID(int.Parse(AnnouncementID));
+    }
+}

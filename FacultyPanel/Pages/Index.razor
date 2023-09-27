@@ -1,0 +1,57 @@
+﻿@page "/"
+@using ClassLibraryDAL
+@using ClassLibraryModel
+@using System.Security.Claims
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<PageTitle>Index</PageTitle>
+
+<div class="row">
+    <AuthorizeView Roles="Faculty">
+        <Authorized>
+            <div class="col-md-4 mb-4" @onclick='() => NavigateToPage("ann/announcements")'>
+                <div class="card text-center">
+                    <div class="card-body">
+                        <i class="bi bi-megaphone-fill text-primary" style="font-size: 3rem;"></i>
+                        <h5 class="card-title mt-3">Announcements</h5>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4 mb-4" @onclick='() => NavigateToPage("facl/faclprofile")'>
+                <div class="card text-center">
+                    <div class="card-body">
+                        <i class="bi bi-person-fill text-warning" style="font-size: 3rem;"></i>
+                        <h5 class="card-title mt-3">Profile</h5>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4 mb-4" @onclick='() => NavigateToPage("facl/projectproposal")'>
+                <div class="card text-center">
+                    <div class="card-body">
+                        <i class="bi bi-list-task text-danger" style="font-size: 3rem;"></i>
+                        <h5 class="card-title mt-3">Projects</h5>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4" @onclick='() => NavigateToPage("facl/projecttasks")'>
+                <div class="card text-center">
+                    <div class="card-body">
+                        <i class="bi bi-journal-check text-success" style="font-size: 3rem;"></i>
+                        <h5 class="card-title mt-3">Tasks</h5>
+                    </div>
+                </div>
+            </div>
+
+        </Authorized>
+    </AuthorizeView>
+</div>
+
+@code {
+    private void NavigateToPage(string url)
+    {
+        NavigationManager.NavigateTo(url);
+    }
+}

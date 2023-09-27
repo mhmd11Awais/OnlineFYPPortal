@@ -1,0 +1,91 @@
+﻿@page "/facl/assignprojecttasks/{SupID}"
+@using ClassLibraryDAL
+@using ClassLibraryModel
+@using System.Security.Claims
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IJSRuntime JS
+@inject NavigationManager nm
+@attribute [Authorize(Roles = "Faculty")]
+
+<h3>AssignProjectTasks</h3>
+
+<br />
+<div class="alert alert-success" role="alert" hidden="@showAlert">
+	@errorMessage
+</div>
+
+
+<EditForm Model="projecttaskModel" OnSubmit="SaveTask">
+	<br />
+	<label>Task Title</label>
+	<br />
+	<input type="text" @bind-value="projecttaskModel.TaskTitle" placeholder="Enter Task Title" />
+	<br />
+	<br />
+	<label>Task Details</label>
+	<br />
+	<textarea rows="4" cols="50" @bind="projecttaskModel.TaskDetails" placeholder="Enter Task Details"></textarea>
+	<br />
+	<br />
+	<button type="submit" class="btn btn-outline-primary btn-sm">@ButtonName</button>
+</EditForm>
+
+@code {
+	[Parameter]
+	public string? SupID { get; set; }
+
+	private bool? showAlert = true;
+
+	public string? ButtonName { get; set; }
+	private string? email;
+	private string? errorMessage;
+	private int result;
+	private IEnumerable<Claim> claims = Enumerable.Empty<Claim>();
+
+	private ProjectTaskModel projecttaskModel { get; set; } = new ProjectTaskModel();
+
+	protected override async Task OnInitializedAsync()
+	{
+		var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+		var user = authState.User;
+
+		if (user.Identity is not null && user.Identity.IsAuthenticated)
+		{
+			claims = user.Claims;
+			email = user.FindFirst(c => c.Type == ClaimTypes.Email)?.Value;
+			ButtonName = "Save";
+		}
+	}
+
+	private void SaveTask()
+	{
+		if (ButtonName == "Save")
+		{
+			projecttaskModel.SupID = int.Parse(SupID);
+			result = ProjectTaskDAL.CreateTask(projecttaskModel);
+			if (result == 1)
+			{
+				nm.NavigateTo("facl/projecttasks");
+			}
+			else
+			{
+				errorMessage = "Failed to Assign Task";
+				ShowAlert();
+			}
+		}
+	}
+
+	private async Task ShowAlert()
+	{
+		showAlert = false;
+		StateHasChanged();
+
+		await Task.Delay(3000); // Wait for 5 seconds
+
+		await InvokeAsync(() =>
+		{
+			showAlert = true;
+			StateHasChanged();
+		});
+	}
+}

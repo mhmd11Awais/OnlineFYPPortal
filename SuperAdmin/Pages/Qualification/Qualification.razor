@@ -1,0 +1,59 @@
+﻿@page "/qual/qualifications"
+@using ClassLibraryDAL
+@using ClassLibraryModel
+@attribute [Authorize(Roles = "Administrator")]
+
+<h3 class="mt-5">Qualifications</h3>
+<br />
+<a href="qual/addnewqual" class="btn btn-primary btn-sm">Add Qualification</a>
+<br />
+<br />
+
+<table class="table table-bordered mt-3">
+    <thead class="thead-dark">
+        <tr>
+            <th scope="col">Sr#</th>
+            <th scope="col">Title</th>
+            <th scope="col">Active</th>
+            <th scope="col">Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in qualData)
+        {
+            <tr>
+                <td>@item.QualID</td>
+                <td>@item.QualTitle</td>
+                <td>@item.QualIsActive</td>
+                <td>
+                    <a href="qual/addnewqual/@item.QualID" class="btn btn-primary btn-sm">Edit</a>
+                    <button class="btn btn-danger btn-sm" @onclick="(()=>DeleteQual(item.QualID))">Delete</button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+
+
+@code {
+	private List<QualModel> qualData { get; set; } = new List<QualModel>();
+
+	protected override void OnInitialized()
+	{
+		LoadQual();
+	}
+
+	private void LoadQual()
+	{
+		qualData = QualDAL.GetQual();
+	}
+
+	private void DeleteQual(int QualID)
+	{
+		if (QualDAL.DeleteQual(QualID) == 1)
+		{
+			LoadQual();
+		}
+	}
+}

@@ -1,0 +1,56 @@
+﻿@page "/fypsubmission/fypsubmissions"
+@using ClassLibraryDAL
+@using ClassLibraryModel
+@using System.Security.Claims
+@inject NavigationManager nm
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IJSRuntime JS
+@attribute [Authorize(Roles = "Faculty")]
+
+<h3 class="text-center">FYP Submissions</h3>
+
+<div class="row row-cols-1 row-cols-md-2 g-4">
+    @foreach (var item in fypSubmissionData)
+    {
+        <div class="col">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title text-center mb-3">@item.ProjTitle</h5>
+                    <ul class="list-unstyled">
+                        <li><strong>FYP:</strong> @item.FYPTitle</li>
+                        <li><strong>Group:</strong> @item.SgName</li>
+                        <li><strong>Created:</strong> @item.ProjStartDate</li>
+                        <li><strong>DueDate:</strong> @item.ProjEndDate</li>
+                        <li><strong>File:</strong> @item.SubmitFile</li>
+                        <li><strong>FYP Submitted:</strong> @item.FypSubmitted</li>
+                    </ul>
+                </div>
+                <div class="card-footer">
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        @*<a href="facl/editfaclprofile/@item.FaclID" class="btn btn-primary me-md-2">Edit Profile</a>*@
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private string? email;
+    private IEnumerable<Claim> claims = Enumerable.Empty<Claim>();
+
+    private List<FYPSubmissionModel> fypSubmissionData { get; set; } = new List<FYPSubmissionModel>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity is not null && user.Identity.IsAuthenticated)
+        {
+            claims = user.Claims;
+            email = user.FindFirst(c => c.Type == ClaimTypes.Email)?.Value;
+            fypSubmissionData = FYPSubmissionDAL.GetFypSubmissions();
+        }
+    }
+}

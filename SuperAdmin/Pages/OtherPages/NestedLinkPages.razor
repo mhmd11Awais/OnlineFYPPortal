@@ -1,0 +1,73 @@
+﻿@page "/others/nestedPages"
+@attribute [Authorize(Roles = "Administrator")]
+
+<h3 class="mt-5">All Other Pages</h3>
+<br />
+<div class="row">
+    <div class="col-md-4">
+        <div class="card bg-white text-dark mb-3">
+            <div class="card-body">
+                <a href="others/country" class="text-decoration-none text-dark">
+                    <h5 class="card-title"><i class="bi bi-flag-fill text-primary"></i> Country</h5>
+                </a>
+            </div>
+        </div>
+        <div class="card bg-white text-dark mb-3">
+            <div class="card-body">
+                <a href="others/roles" class="text-decoration-none text-dark">
+                    <h5 class="card-title"><i class="bi bi-person-badge-fill text-success"></i> Roles</h5>
+                </a>
+            </div>
+        </div>
+        <div class="card bg-white text-dark mb-3">
+            <div class="card-body">
+                <a href="pos/positions" class="text-decoration-none text-dark">
+                    <h5 class="card-title"><i class="bi bi-briefcase-fill text-info"></i> Positions</h5>
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-white text-dark mb-3">
+            <div class="card-body">
+                <a href="others/city" class="text-decoration-none text-dark">
+                    <h5 class="card-title"><i class="bi bi-building-fill text-warning"></i> City</h5>
+                </a>
+            </div>
+        </div>
+        <div class="card bg-white text-dark mb-3">
+            <div class="card-body">
+                <a href="others/gender" class="text-decoration-none text-dark">
+                    <h5 class="card-title"><i class="bi bi-people-fill text-danger"></i> Gender</h5>
+                </a>
+            </div>
+        </div>
+        <div class="card bg-white text-dark mb-3">
+            <div class="card-body">
+                <a href="exp/expertise" class="text-decoration-none text-dark">
+                    <h5 class="card-title"><i class="bi bi-lightbulb-fill text-secondary"></i> Expertise</h5>
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-white text-dark mb-3">
+            <div class="card-body">
+                <a href="others/fyp" class="text-decoration-none text-dark">
+                    <h5 class="card-title"><i class="bi bi-journal-bookmark-fill text-info"></i> FYP</h5>
+                </a>
+            </div>
+        </div>
+        <div class="card bg-white text-dark mb-3">
+            <div class="card-body">
+                <a href="qual/qualifications" class="text-decoration-none text-dark">
+                    <h5 class="card-title"><i class="bi bi-award-fill text-primary"></i> Qualifications</h5>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+
+}

@@ -1,0 +1,109 @@
+﻿@page "/facl/projecttasks"
+@using ClassLibraryDAL
+@using ClassLibraryModel
+@using System.Security.Claims
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IJSRuntime JS
+@attribute [Authorize(Roles = "Faculty")]
+
+<h3>ProjectTasks</h3>
+
+<br />
+<br />
+<div class="row row-cols-1 row-cols-md-2 g-4">
+	@foreach (var item in projectTaskData)
+	{
+		<div class="col">
+			<div class="card h-100 border-primary shadow">
+				<div class="card-body">
+					<h6 class="card-title">Task ID: @item.TaskID</h6>
+					<h5 class="card-title">@item.TaskTitle</h5>
+					<h6 class="card-title">Details: @item.TaskDetails</h6>
+					<h6 class="card-title">Supervisor: @item.FaclFirstName @item.FaclLastName</h6>
+					<h6 class="card-title">Project: @item.ProjTitle</h6>
+					<h6 class="card-title">Group: @item.SgName</h6>
+					@if (item.TaskIsCompleted != null)
+					{
+						<h5 class="card-title">Task Completed: @item.TaskIsCompleted</h5>
+					}
+				</div>@*
+				<div class="card-footer">
+					<div class="d-grid gap-2 d-md-flex justify-content-md-end">
+						<a href="facl/editprojecttasks/@item.TaskID" class="btn btn-outline-primary me-md-2 mb-2 mb-md-0">Edit</a>
+					</div>
+				</div>*@
+			</div>
+		</div>
+	}
+</div>
+
+<style>
+	.card {
+		border-width: 2px;
+		border-radius: 10px;
+		transition: transform 0.3s;
+	}
+
+		.card:hover {
+			transform: translateY(-5px);
+		}
+
+	.border-primary {
+		border-color: #007bff !important;
+	}
+
+	.text-primary {
+		color: #007bff !important;
+	}
+
+	.btn-primary {
+		background-color: #2c3e50;
+		border-color: #2c3e50;
+		color: #ffffff;
+	}
+
+		.btn-primary:hover {
+			background-color: #34495e;
+			border-color: #34495e;
+		}
+
+	.btn-outline-primary {
+		color: #2c3e50;
+		border-color: #2c3e50;
+	}
+
+		.btn-outline-primary:hover {
+			background-color: #2c3e50;
+			border-color: #2c3e50;
+			color: #ffffff;
+		}
+</style>
+
+@code {
+	private int Fid;
+	private string? email;
+	private IEnumerable<Claim> claims = Enumerable.Empty<Claim>();
+
+	private List<FaclModel> faclData { get; set; } = new List<FaclModel>();
+
+	private List<ProjectTaskModel> projectTaskData { get; set; } = new List<ProjectTaskModel>();
+
+	protected override async Task OnInitializedAsync()
+	{
+		var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+		var user = authState.User;
+
+		if (user.Identity is not null && user.Identity.IsAuthenticated)
+		{
+			claims = user.Claims;
+			email = user.FindFirst(c => c.Type == ClaimTypes.Email)?.Value;
+			faclData = FaclDAL.GetFaclByEmail(email);
+			foreach (var item in faclData)
+			{
+				Fid = item.FaclID;
+			}
+
+			projectTaskData = ProjectTaskDAL.ViewTasks();
+		}
+	}
+}

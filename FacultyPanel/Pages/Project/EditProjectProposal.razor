@@ -1,0 +1,148 @@
+﻿@page "/facl/editprojectproposal"
+@page "/facl/editprojectproposal/{ProjID}"
+@using ClassLibraryDAL
+@using ClassLibraryModel
+@using System.Security.Claims
+@inject NavigationManager nm
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IJSRuntime JS
+@attribute [Authorize(Roles = "Faculty")]
+
+<h3 class="text-center mb-4">Edit Project Proposal</h3>
+
+<div class="alert alert-success" role="alert" hidden="@showAlert">
+    @errorMessage
+</div>
+
+<br />
+<EditForm Model="projectModel" OnSubmit="SaveProject">
+    <div class="mb-3">
+        <label class="form-label">Project Title</label>
+        <input type="text" class="form-control" @bind="projectModel.ProjTitle" placeholder="Enter Project Title" />
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Project Details</label>
+        <textarea class="form-control" rows="4" cols="50" @bind="projectModel.ProjDetails" placeholder="Enter Project Details"></textarea>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Is Active?</label>
+        <div class="form-check">
+            <input class="form-check-input" type="radio" value="true" checked="@projectModel.ProjIsActive" @onchange="e => projectModel.ProjIsActive = true" />
+            <label class="form-check-label">Yes</label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" type="radio" value="false" checked="@(!projectModel.ProjIsActive)" @onchange="e => projectModel.ProjIsActive = false" />
+            <label class="form-check-label">No</label>
+        </div>
+    </div>
+    <button type="submit" class="btn btn-primary">@ButtonName</button>
+</EditForm>
+
+<style>
+    .alert {
+        border-radius: 10px;
+    }
+
+    .form-label {
+        font-weight: bold;
+    }
+</style>
+
+@code {
+
+    [Parameter]
+    public string? ProjID { get; set; } // Added ProjID property
+
+    public string? ButtonName { get; set; }
+
+    private int Fid;
+    private string? email;
+    private IEnumerable<Claim> claims = Enumerable.Empty<Claim>();
+
+    private string? errorMessage;
+    private bool showAlert = true;
+
+    private List<FaclModel> faclData { get; set; } = new List<FaclModel>();
+    private List<ProjectModel>? projectData { get; set; }
+    private ProjectModel projectModel { get; set; } = new ProjectModel();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity != null && user.Identity.IsAuthenticated)
+        {
+            claims = user.Claims;
+            email = user.FindFirst(c => c.Type == ClaimTypes.Email)?.Value;
+            faclData = FaclDAL.GetFaclByEmail(email).ToList();
+            foreach (var item in faclData)
+            {
+                projectModel.FaclID = item.FaclID;
+                Fid = item.FaclID;
+            }
+            if (faclData.Count > 0)
+            {
+                Fid = faclData[0].FaclID;
+                projectData = ProjectDAL.GetActiveProjectsByFaculty(Fid);
+                if (!string.IsNullOrEmpty(ProjID))
+                {
+                    ButtonName = "Edit";
+                    var item = projectData.FirstOrDefault(p => p.ProjID == int.Parse(ProjID));
+                    if (item != null)
+                    {
+                        projectModel.ProjID = item.ProjID;
+                        projectModel.ProjTitle = item.ProjTitle;
+                        projectModel.ProjDetails = item.ProjDetails;
+                        projectModel.FaclID = item.FaclID;
+                        projectModel.ProjIsActive = item.ProjIsActive;
+                    }
+                }
+                else
+                {
+                    ButtonName = "Save";
+                }
+            }
+        }
+    }
+
+    private async Task SaveProject()
+    {
+        if (ButtonName == "Save")
+        {
+            if (ProjectDAL.InsertProject(projectModel) == 1)
+            {
+                nm.NavigateTo("/facl/projectproposal");
+            }
+            else
+            {
+                errorMessage = "Failed to save the project";
+                await ShowAlert();
+            }
+        }
+        else
+        {
+            if (ProjectDAL.UpdateProject(projectModel) == 1)
+            {
+                nm.NavigateTo("/facl/projectproposal");
+            }
+            else
+            {
+                errorMessage = "Failed to update the project";
+                await ShowAlert();
+            }
+        }
+    }
+
+    private async Task ShowAlert()
+    {
+        showAlert = false;
+        StateHasChanged();
+
+        await Task.Delay(3000);
+
+        showAlert = true;
+        StateHasChanged();
+    }
+
+}

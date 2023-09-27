@@ -1,0 +1,73 @@
+﻿@page "/dept/department"
+@using ClassLibraryDAL
+@using ClassLibraryModel
+@inject IJSRuntime JSRuntime
+@attribute [Authorize(Roles = "Administrator")]
+
+@using SuperAdmin.Data
+
+<h3 class="text-center mt-5">Departments</h3>
+
+<div class="mt-4 d-flex justify-content-end">
+    <a href="dept/addnewdepartment" class="btn btn-primary btn-sm">Add Department</a>
+</div>
+
+<div class="mt-4">
+    <table class="table table-striped table-bordered">
+        <thead class="thead-dark">
+            <tr>
+                <th scope="col">Sr#</th>
+                <th scope="col">Name</th>
+                <th scope="col">Organization</th>
+                <th scope="col">IsActive</th>
+                <th scope="col">Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in deptData)
+            {
+                <tr>
+                    <td>@item.DeptID</td>
+                    <td>@item.DeptName</td>
+                    <td>@item.OrgName</td>
+                    <td>@item.DeptIsActive</td>
+                    <td>
+                        <a href="dept/addnewdepartment/@item.DeptID" class="btn btn-primary btn-sm me-2">Edit</a>
+                        <button class="btn btn-danger btn-sm" @onclick="(()=>ConfirmDelete(item.DeptID))">Delete</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@code {
+    private List<DeptModel> deptData { get; set; } = new List<DeptModel>();
+
+    protected override void OnInitialized()
+    {
+        LoadDept();
+    }
+
+    private void LoadDept()
+    {
+        deptData = DeptDAL.GetDept();
+    }
+
+    private async Task ConfirmDelete(int DeptID)
+    {
+        bool confirmed = await JSRuntime.InvokeAsync<bool>("confirm", "Are you sure you want to delete this item?");
+        if (confirmed)
+        {
+            DeleteDept(DeptID);
+        }
+    }
+
+    private void DeleteDept(int DeptID)
+    {
+        if (DeptDAL.DeleteDept(DeptID) == 1)
+        {
+            LoadDept();
+        }
+    }
+}

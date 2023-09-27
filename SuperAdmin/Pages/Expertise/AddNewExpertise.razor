@@ -1,0 +1,95 @@
+﻿@page "/exp/addnewexp"
+@page "/exp/addnewexp/{ExpID}"
+@using ClassLibraryModel
+@using ClassLibraryDAL
+@inject NavigationManager nm
+@attribute [Authorize(Roles = "Administrator")]
+
+<h3>AddNewExpertise</h3>
+
+<br />
+<EditForm Model="expModel" OnSubmit="SaveExp">
+
+	<br />
+	<label>Title</label>
+	<br />
+	<input type="text" @bind-value="expModel.ExpTitle" placeholder="Enter Expertise Title" />
+	<br />
+	<br />
+	<label>Abbreviation</label>
+	<br />
+	<input type="text" @bind-value="expModel.Abbreviation" placeholder="Enter Abbreviation" />
+	<br />
+	<label>Is Active</label>
+	<br />
+	<div>
+		<input type="radio" id="true" name="expModel.ExpIsActive" @bind="expModel.ExpIsActive" checked>
+		<label for="true">Active</label>
+	</div>
+	<div>
+		<input type="radio" id="false" name="expModel.ExpIsActive" @bind="expModel.ExpIsActive">
+		<label for="false">Inactive</label>
+	</div>
+	<br />
+	<br />
+	<button type="submit" class="btn btn-outline-primary btn-sm">@ButtonName</button>
+
+</EditForm>
+<br />
+
+@code {
+
+	[Parameter]
+	public string? ExpID { get; set; }
+
+	public string? ButtonName { get; set; }
+
+	private List<ExpModel>? expData { get; set; }
+	private ExpModel expModel { get; set; } = new ExpModel();
+
+	protected override void OnInitialized()
+	{
+		if (!string.IsNullOrEmpty(ExpID))
+		{
+			ButtonName = "Edit";
+			GetData();
+			foreach (var item in expData)
+			{
+				expModel.ExpID = item.ExpID;
+				expModel.ExpTitle = item.ExpTitle;
+				expModel.Abbreviation = item.Abbreviation;
+				expModel.ExpIsActive = item.ExpIsActive;
+			}
+		}
+		else
+		{
+			ButtonName = "Save";
+			expModel.ExpIsActive = true;
+		}
+	}
+
+	private void SaveExp()
+	{
+		if (ButtonName == "Save")
+		{
+			if (ExpDAL.SaveExp(expModel) == 1)
+			{
+				nm.NavigateTo("exp/expertise");
+			}
+		}
+		else
+		{
+			expModel.ExpID = int.Parse(ExpID);
+			if (ExpDAL.EditExp(expModel) == 1)
+			{
+				nm.NavigateTo("exp/expertise");
+			}
+		}
+	}
+
+	private void GetData()
+	{
+		expData = ExpDAL.GetExpByID(int.Parse(ExpID));
+	}
+
+}

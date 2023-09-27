@@ -1,0 +1,94 @@
+﻿@page "/stdgroup/group"
+@using ClassLibraryDAL
+@using ClassLibraryModel
+@using System.Security.Claims
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IJSRuntime JS
+@attribute [Authorize(Roles = "Student")]
+
+<h3 class="text-center mb-4">Group</h3>
+
+<div class="d-grid gap-2 d-md-flex justify-content-md-end">
+    <a href="stdgroup/addnewgroup" class="btn btn-outline-primary me-md-2 mb-2 mb-md-0">Create Group</a>
+    <a href="stdgroup/joingroup" class="btn btn-outline-primary me-md-2 mb-2 mb-md-0">Join Group</a>
+</div>
+
+<br />
+<br />
+<div class="row row-cols-1 row-cols-md-2 g-4">
+    @foreach (var item in sgmemberData)
+    {
+        <div class="col">
+            <div class="card h-100 border-primary shadow">
+                <div class="card-body">
+                    <h6 class="card-title">Group ID: @item.SgmID</h6>
+                    <h6 class="card-title">Student: @item.StdFirstName @item.StdLastName</h6>
+                    <h5 class="card-title">@item.SgName</h5>
+                    <h6 class="card-title">Leader: @item.SgmIsLeader</h6>
+                    <h6 class="card-title">Active: @item.SgmIsActive</h6>
+                </div>
+                <div class="card-footer">
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="stdgroup/addnewgroup/@item.SgID" class="btn btn-outline-primary me-md-2 mb-2 mb-md-0">Edit</a>
+                        <button class="btn btn-outline-danger btn-sm" @onclick="(()=>DeleteSGMember(item.StdID))">Delete</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    .card {
+        border-width: 2px;
+        border-radius: 10px;
+        transition: transform 0.3s;
+    }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+    .border-primary {
+        border-color: #007bff !important;
+    }
+
+    .text-primary {
+        color: #007bff !important;
+    }
+</style>
+
+@code {
+    private int Sid;
+    private string? email;
+    private IEnumerable<Claim> claims = Enumerable.Empty<Claim>();
+
+    private List<StdModel> stdData { get; set; } = new List<StdModel>();
+    private List<SGMemberModel> sgmemberData { get; set; } = new List<SGMemberModel>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity is not null && user.Identity.IsAuthenticated)
+        {
+            claims = user.Claims;
+            email = user.FindFirst(c => c.Type == ClaimTypes.Email)?.Value;
+            stdData = StdDAL.GetStdByEmail(email);
+            foreach (var item in stdData)
+            {
+                Sid = item.StdID;
+            }
+            sgmemberData = SGMemberDAL.GetSGMemberByStd(Sid);
+        }
+    }
+
+    private void DeleteSGMember(int StdID)
+    {
+        if (SGMemberDAL.DeleteSGMember(StdID) == 1)
+        {
+            sgmemberData = SGMemberDAL.GetSGMemberByStd(StdID);
+        }
+    }
+}

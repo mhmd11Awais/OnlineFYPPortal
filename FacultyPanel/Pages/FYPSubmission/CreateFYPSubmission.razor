@@ -1,0 +1,139 @@
+﻿@page "/fypsubmission/createfypsubmission/{SupID}"
+@using ClassLibraryDAL
+@using ClassLibraryModel
+@using System.Security.Claims
+@inject NavigationManager nm
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IJSRuntime JS
+@attribute [Authorize(Roles = "Faculty")]
+
+
+<h3 class="text-center mb-4">Create FYP Submission</h3>
+
+<div class="alert alert-success" role="alert" hidden="@showAlert">
+    @errorMessage
+</div>
+
+<br />
+<EditForm Model="fypsubmissionModel" OnSubmit="SaveFYPSubmission">
+	<div>
+		<label class="form-label">FYP</label>
+		<br />
+		<select class="form-control-sm" @onchange="GetFYP">
+			<option value="0">--Select FYP--</option>
+			@foreach (var item in fypModel)
+			{
+				<option value="@item.FYPID">@item.FYPTitle</option>
+			}
+		</select>
+	</div>
+	<br />
+    <div class="mb-3">
+        <label class="form-label">DueDate(Number of Days From Today)</label>
+		<input type="number" class="form-control" @bind="@DayNumber" placeholder="Enter Number of Days" />
+    </div>
+    <button type="submit" class="btn btn-primary">@ButtonName</button>
+</EditForm>
+
+<style>
+    .alert {
+        border-radius: 10px;
+    }
+
+    .form-label {
+        font-weight: bold;
+    }
+</style>
+
+
+@code {
+
+	[Parameter]
+	public string? SupID { get; set; }
+
+	private bool? showAlert = true;
+	private int DayNumber { get; set; }
+	private string? futureDate;
+	public string? ButtonName { get; set; }
+	private string? email;
+	private string? errorMessage;
+	private int result;
+	private IEnumerable<Claim> claims = Enumerable.Empty<Claim>();
+
+	private FYPSubmissionModel fypsubmissionModel { get; set; } = new FYPSubmissionModel();
+
+	private List<FYPModel> fypModel { get; set; } = new List<FYPModel>();
+	private int fyp { get; set; }
+
+	protected override async Task OnInitializedAsync()
+	{
+		var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+		var user = authState.User;
+
+		if (user.Identity is not null && user.Identity.IsAuthenticated)
+		{
+			claims = user.Claims;
+			email = user.FindFirst(c => c.Type == ClaimTypes.Email)?.Value;
+			LoadFYP();
+			ButtonName = "Save";
+		}
+	}
+
+	private string GetFutureDate(int daysToAdd)
+	{
+		var currentDate = DateTime.Now;
+		var futureDate = currentDate.AddDays(daysToAdd);
+
+		//return futureDate.ToString("yyyy-MM-dd");
+		return futureDate.ToString();
+	}
+
+	private void GetFYP(ChangeEventArgs e)
+	{
+		fyp = int.Parse(e.Value.ToString());
+	}
+
+	private void LoadFYP()
+	{
+		fypModel = FYPDAL.GetFYP();
+	}
+
+	private void SaveFYPSubmission()
+	{
+		if (ButtonName == "Save")
+		{
+			if (fyp > 0)
+			{
+				fypsubmissionModel.SupID = int.Parse(SupID);
+				fypsubmissionModel.FYPID = fyp;
+				futureDate = GetFutureDate(DayNumber); // Get future date for the number of days from now
+				fypsubmissionModel.ProjEndDate = futureDate;
+				result = FYPSubmissionDAL.InsertFypSubmission(fypsubmissionModel);
+				if (result == 1)
+				{
+					nm.NavigateTo("fypsubmission/fypsubmissions");
+				}
+				else
+				{
+					errorMessage = "Failed to Create Submission. Selected FYP Already Submitted";
+					ShowAlert();
+				}
+			}
+			
+		}
+	}
+
+	private async Task ShowAlert()
+	{
+		showAlert = false;
+		StateHasChanged();
+
+		await Task.Delay(3000); // Wait for 5 seconds
+
+		await InvokeAsync(() =>
+		{
+			showAlert = true;
+			StateHasChanged();
+		});
+	}
+}

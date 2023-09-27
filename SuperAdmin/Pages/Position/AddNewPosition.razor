@@ -1,0 +1,92 @@
+﻿@page "/pos/addnewpos"
+@page "/pos/addnewpos/{PosID}"
+@using ClassLibraryModel
+@using ClassLibraryDAL
+@inject NavigationManager nm
+@attribute [Authorize(Roles = "Administrator")]
+
+<h3>AddNewPosition</h3>
+
+<br />
+<EditForm Model="posModel" OnSubmit="SavePos">
+	<br />
+	<label>Title</label>
+	<br />
+	<input type="text" @bind-value="posModel.PosTitle" placeholder="Enter Position Title" />
+	<br />
+	<label>Is Active</label>
+	<br />
+	<div>
+		<input type="radio" id="true" name="posModel.PosIsActive" @bind="posModel.PosIsActive" checked>
+		<label for="true">Active</label>
+	</div>
+	<div>
+		<input type="radio" id="false" name="posModel.PosIsActive" @bind="posModel.PosIsActive">
+		<label for="false">Inactive</label>
+	</div>
+	<br />
+	<br />
+	<button type="submit" class="btn btn-outline-primary btn-sm">@ButtonName</button>
+
+</EditForm>
+<br />
+
+@code {
+
+	[Parameter]
+	public string? PosID { get; set; }
+
+	public string? ButtonName { get; set; }
+
+	private List<PosModel>? posData { get; set; }
+	private PosModel posModel { get; set; } = new PosModel();
+
+	protected override void OnInitialized()
+	{
+		if (!string.IsNullOrEmpty(PosID))
+		{
+			ButtonName = "Edit";
+			GetData();
+			foreach (var item in posData)
+			{
+				posModel.PosID = item.PosID;
+				posModel.PosTitle = item.PosTitle;
+				posModel.PosIsActive = item.PosIsActive;
+			}
+		}
+		else
+		{
+			ButtonName = "Save";
+			posModel.PosIsActive = true;
+		}
+	}
+
+	private void SavePos()
+	{
+		if (ButtonName == "Save")
+		{
+			if (PosDAL.SavePos(posModel) == 1)
+			{
+				nm.NavigateTo("pos/positions");
+			}
+		}
+		else
+		{
+			posModel.PosID = int.Parse(PosID);
+			if (PosDAL.EditPos(posModel) == 1)
+			{
+				nm.NavigateTo("pos/positions");
+			}
+		}
+		
+	}
+
+	private void GetData()
+	{
+		posData = PosDAL.GetPosByID(int.Parse(PosID));
+	}
+
+
+}
+
+

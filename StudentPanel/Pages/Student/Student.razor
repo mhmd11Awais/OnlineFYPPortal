@@ -1,0 +1,120 @@
+﻿@page "/std/student"
+@using ClassLibraryDAL
+@using ClassLibraryModel
+@using System.Security.Claims
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@attribute [Authorize(Roles = "Student")]
+
+<h3 class="text-center mb-4">Student Profile</h3>
+
+<style>
+    .card {
+        border: none;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s;
+    }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+    .card-header {
+        background-color: #f8f9fa;
+        border-bottom: none;
+        padding: 1.5rem;
+        border-radius: 10px 10px 0 0;
+    }
+
+    .card-body {
+        padding: 1.5rem;
+    }
+
+    .card-title {
+        font-size: 1.5rem;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+    }
+
+    .card-subtitle {
+        color: #6c757d;
+        margin-bottom: 1rem;
+    }
+
+    .card-text {
+        margin-bottom: 0.5rem;
+    }
+
+    .btn-edit {
+        background-color: #007bff;
+        color: #fff;
+        border-color: #007bff;
+        transition: background-color 0.3s;
+    }
+
+        .btn-edit:hover {
+            background-color: #0069d9;
+            border-color: #0062cc;
+        }
+</style>
+
+<div class="row row-cols-1 row-cols-md-2 g-4">
+    @foreach (var item in stdData)
+    {
+        <div class="col">
+            <div class="card h-100">
+                <div class="card-header text-center">
+                    <img class="img-fluid rounded-circle mb-3" id="imgLogo" src="@item.StdImage" alt="Profile Image" style="width: 80px; height: 80px;" />
+                    <h5 class="card-title">@item.StdFirstName @item.StdLastName</h5>
+                    <h6 class="card-subtitle">Student</h6>
+                </div>
+                <div class="card-body">
+                    <h6 class="card-title">Personal Information</h6>
+                    <hr />
+                    <div class="row">
+                        <div class="col-6">
+                            <p class="card-text"><strong>Gender:</strong> @item.GenderName</p>
+                            <p class="card-text"><strong>CNIC:</strong> @item.StdCNIC</p>
+                            <p class="card-text"><strong>Phone No:</strong> @item.StdPhoneNo</p>
+                            <p class="card-text"><strong>Email:</strong> @item.StdEmail</p>
+                            <p class="card-text"><strong>Country:</strong> @item.CountryName</p>
+                            <p class="card-text"><strong>City:</strong> @item.CityName</p>
+                        </div>
+                        <div class="col-6">
+                            <p class="card-text"><strong>Address:</strong> @item.StdAddress</p>
+                            <p class="card-text"><strong>Last Education:</strong> @item.StdLastEducation</p>
+                            <p class="card-text"><strong>Organization:</strong> @item.OrgName</p>
+                            <p class="card-text"><strong>Department:</strong> @item.DeptName</p>
+                            <p class="card-text"><strong>Active:</strong> @item.StdIsActive</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="std/addnewstd/@item.StdID" class="btn btn-edit me-md-2 mb-2 mb-md-0">Edit Profile</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private string? email;
+    private IEnumerable<Claim> claims = Enumerable.Empty<Claim>();
+
+    private List<StdModel> stdData { get; set; } = new List<StdModel>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity is not null && user.Identity.IsAuthenticated)
+        {
+            claims = user.Claims;
+            email = user.FindFirst(c => c.Type == ClaimTypes.Email)?.Value;
+            stdData = StdDAL.GetStdByEmail(email);
+        }
+    }
+}
